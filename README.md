@@ -1,6 +1,6 @@
 # glyphsaver
 
-[![CI](https://github.com/OWNER/glyphsaver/actions/workflows/ci.yml/badge.svg)](https://github.com/iam-rishabh/glyphsaver/actions/workflows/ci.yml)
+[![CI](https://github.com/iam-rishabh/glyphsaver/actions/workflows/ci.yml/badge.svg)](https://github.com/iam-rishabh/glyphsaver/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Lightweight, code-only screensavers for Linux, built for developers who
@@ -23,7 +23,7 @@ a Tkinter Canvas animation, you can ship a new glyph in a few dozen lines
 ## Quick install
 
 ```bash
-git clone https://github.com/OWNER/glyphsaver.git
+git clone https://github.com/iam-rishabh/glyphsaver.git
 cd glyphsaver
 chmod +x install.sh
 ./install.sh
