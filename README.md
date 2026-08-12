@@ -1,6 +1,6 @@
 # glyphsaver
 
-[![CI](https://github.com/OWNER/glyphsaver/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/glyphsaver/actions/workflows/ci.yml)
+[![CI](https://github.com/OWNER/glyphsaver/actions/workflows/ci.yml/badge.svg)](https://github.com/iam-rishabh/glyphsaver/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Lightweight, code-only screensavers for Linux, built for developers who
@@ -10,8 +10,6 @@ No images, no asset pipeline, no GTK/Qt/Electron — every screensaver
 ("glyph") is a small Python class that draws itself on a Tkinter canvas.
 Drop a new file in `glyphs/` and it's picked up automatically by the CLI.
 Starts instantly, idles at a few MB of RAM.
-
-> Replace `OWNER` above with your GitHub username/org once this repo is pushed.
 
 ## Why glyph-only?
 
