@@ -1,0 +1,66 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `python3 glyphsaver.py run heart-eyes --mouth`
+        2. Wait for a blink
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: ubuntu-version
+    attributes:
+      label: Ubuntu / Linux distro version
+      placeholder: "22.04 / 24.04 / Fedora 40 / ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: session-type
+    attributes:
+      label: Session type
+      options:
+        - X11
+        - Wayland
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "python3 --version"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        Terminal output, or `journalctl --user -u glyphsaver.service` if using the systemd service.
+      render: shell
+    validations:
+      required: false

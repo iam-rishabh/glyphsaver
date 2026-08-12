@@ -1,0 +1,4 @@
+# glyphsaver has zero third-party runtime dependencies (stdlib + Tkinter
+# only). These are only needed for running tests/lint locally, matching CI.
+pytest>=8.0
+flake8>=7.0

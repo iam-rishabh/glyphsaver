@@ -1,0 +1,11 @@
+[Unit]
+Description=glyphsaver idle watcher
+After=graphical-session.target
+
+[Service]
+# %h expands to your home directory
+ExecStart=/usr/bin/python3 %h/.local/share/glyphsaver/idle_watcher.py --idle-seconds 300 --glyph heart-eyes -- --mouth
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

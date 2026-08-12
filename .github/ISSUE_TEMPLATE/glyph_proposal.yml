@@ -1,0 +1,29 @@
+name: New glyph proposal
+description: Propose a new glyph screensaver (stars, shapes, effects, etc.)
+labels: ["glyph", "enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What's the glyph?
+      description: Describe what it looks like and how it animates.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference (optional)
+      description: A sketch, GIF, or link to something similar.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope-check
+    attributes:
+      label: Scope check
+      options:
+        - label: This can be drawn with Tkinter Canvas primitives (no images, no new dependencies)
+          required: false
+        - label: I'm interested in implementing this myself
+          required: false

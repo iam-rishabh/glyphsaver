@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an idea that isn't a new glyph (e.g. idle detection, packaging, CLI)
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve, or what idea is this?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope-check
+    attributes:
+      label: Scope check
+      options:
+        - label: This keeps glyphsaver lightweight (stdlib + Tkinter only, no heavy new dependencies)
+          required: false
