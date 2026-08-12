@@ -5,28 +5,55 @@ from .base import Glyph
 
 
 # ============================================================
-# COMPACT PIXEL HEART
+# EYE HOUSING
+#
+# A chunky rounded-rectangle, drawn as a pixel mask - the
+# classic OLED robot-eye silhouette (RoboEyes / Vector style).
 # ============================================================
 
-HEART_GRID = [
-    "0001100011000",
-    "0011110111100",
-    "0111111111110",
-    "1111111111111",
-    "1111111111111",
-    "1111111111111",
-    "1111111111111",
-    "0111111111110",
-    "0011111111100",
-    "0001111111000",
-    "0000111110000",
-    "0000011100000",
+EYE_GRID = [
+    "001111111100",
+    "011111111110",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "111111111111",
+    "011111111110",
+    "001111111100",
 ]
+
+EYE_COLS = len(EYE_GRID[0])
+EYE_ROWS = len(EYE_GRID)
+
+# ----------------------------------------------------
+# The pupil is a separate solid block overlaid on top of
+# the housing grid. It's positioned in housing-grid cells
+# (not pixels), and rides along with the housing's own
+# blink/squash transform, so it "closes" together with
+# the lid instead of floating independently.
+# ----------------------------------------------------
+
+PUPIL_W = 4
+PUPIL_H = 5
+
+PUPIL_BASE_COL = (EYE_COLS - PUPIL_W) // 2
+PUPIL_BASE_ROW = (EYE_ROWS - PUPIL_H) // 2
+
+MAX_COL_OFFSET = PUPIL_BASE_COL - 1
+MAX_ROW_OFFSET = PUPIL_BASE_ROW - 2
 
 
 # ============================================================
 # MOUTHS
-# Small, centered, visually subordinate to the hearts.
+# Small, centered, visually subordinate to the eyes.
 # ============================================================
 
 MOUTHS = {
@@ -86,7 +113,7 @@ MOUTHS = {
 # ============================================================
 
 GAZE_STEPS_X = (-1.0, -0.5, 0.0, 0.5, 1.0)
-GAZE_STEPS_Y = (-0.4, -0.15, 0.0, 0.15, 0.35)
+GAZE_STEPS_Y = (-0.6, -0.3, 0.0, 0.3, 0.6)
 
 JITTER_STEPS = (-0.02, 0.0, 0.02)
 
@@ -94,19 +121,13 @@ JITTER_STEPS = (-0.02, 0.0, 0.02)
 # ============================================================
 # EXPRESSION TIMELINE
 #
-# Every expression is not a straight A -> B -> A tween. It
-# follows the same beat animators use to sell a pose:
-#
 #   neutral -> anticipation -> overshoot -> settle -> hold
 #            -> rebound -> neutral
 #
 # Anticipation is a small move in the OPPOSITE direction right
-# before the real move (eyes widen slightly before a blink
-# snaps shut). Overshoot punches past the actual target, then
-# settles back to it and holds. Rebound is a small bounce past
-# neutral on the way back out, like a spring settling. This is
-# what makes the difference between "value changed" and "it
-# reacted."
+# before the real move. Overshoot punches past the actual
+# target, then settles back to it and holds. Rebound is a small
+# bounce past neutral on the way back out.
 # ============================================================
 
 KEYFRAME_TIMES = (0.0, 0.10, 0.38, 0.52, 0.78, 0.90, 1.0)
@@ -120,14 +141,12 @@ KEYFRAME_KINDS = (
     "neutral",
 )
 
-# How far past (or against) the target each beat pushes,
-# expressed as a multiple of the neutral -> target distance.
 ANTICIPATION_FACTOR = -0.22
 OVERSHOOT_FACTOR = 1.30
 REBOUND_FACTOR = -0.16
 
 # Safety bounds so overshoot/anticipation can't invert a scale
-# or fling a heart off the canvas.
+# or fling a housing off the canvas.
 BOUNDS = {
     "left_scale": (0.02, 1.9),
     "right_scale": (0.02, 1.9),
@@ -136,20 +155,20 @@ BOUNDS = {
     "right_x": (-0.55, 0.55),
     "left_y": (-0.55, 0.55),
     "right_y": (-0.55, 0.55),
-    "gaze_x": (-1.6, 1.6),
-    "gaze_y": (-1.0, 1.0),
+    "gaze_x": (-1.2, 1.2),
+    "gaze_y": (-1.2, 1.2),
     "mouth_y": (-0.35, 0.35),
 }
 
 
-class HeartEyesGlyph(Glyph):
+class RobotEyesGlyph(Glyph):
 
-    name = "heart-eyes"
+    name = "robot-eyes"
 
     description = (
-        "Large compact pixel heart eyes with bold, exaggerated "
-        "expressions, digital/stepped transitions, and discrete "
-        "eye-tracking motion"
+        "Rounded-rectangle robot eye housings with a real moving "
+        "pupil/eyeball, digital/stepped transitions, and bold "
+        "anticipation-overshoot expressions"
     )
 
     # ========================================================
@@ -163,8 +182,14 @@ class HeartEyesGlyph(Glyph):
 
         parser.add_argument(
             "--eye-color",
-            default="#ffffff",
-            help="Heart color",
+            default="#00e5ff",
+            help="Eye housing (sclera) color",
+        )
+
+        parser.add_argument(
+            "--pupil-color",
+            default="#081018",
+            help="Pupil color",
         )
 
         parser.add_argument(
@@ -224,7 +249,7 @@ class HeartEyesGlyph(Glyph):
         parser.add_argument(
             "--gaze-speed",
             type=float,
-            default=0.06,
+            default=0.08,
             help="Step size (grid units per tick) for eye-tracking motion",
         )
 
@@ -265,15 +290,7 @@ class HeartEyesGlyph(Glyph):
 
         self.clock_id = None
 
-        # ----------------------------------------------------
-        # Current state
-        # ----------------------------------------------------
-
         self.state = self._neutral()
-
-        # ----------------------------------------------------
-        # Expression animation
-        # ----------------------------------------------------
 
         self.event = None
 
@@ -282,14 +299,8 @@ class HeartEyesGlyph(Glyph):
 
         self.event_poses = []
 
-        # Mouth shape switching is hidden by scaling it
-        # down before changing it.
         self.mouth_shape_current = "smile"
         self.mouth_shape_target = "smile"
-
-        # ----------------------------------------------------
-        # Eye tracking (discrete, digital)
-        # ----------------------------------------------------
 
         self.gaze_target_x = 0.0
         self.gaze_target_y = 0.0
@@ -365,8 +376,8 @@ class HeartEyesGlyph(Glyph):
 
     def _layout(self):
 
-        cols = len(HEART_GRID[0])
-        rows = len(HEART_GRID)
+        cols = EYE_COLS
+        rows = EYE_ROWS
 
         gap = (
             self.width *
@@ -385,7 +396,7 @@ class HeartEyesGlyph(Glyph):
         )
 
         pixel_by_height = (
-            self.height * 0.54
+            self.height * 0.58
         ) / rows
 
         pixel = max(
@@ -398,11 +409,11 @@ class HeartEyesGlyph(Glyph):
             ),
         )
 
-        heart_width = cols * pixel
-        heart_height = rows * pixel
+        eye_width = cols * pixel
+        eye_height = rows * pixel
 
         total_width = (
-            heart_width * 2 +
+            eye_width * 2 +
             gap
         )
 
@@ -415,36 +426,34 @@ class HeartEyesGlyph(Glyph):
 
         right_x = (
             left_x +
-            heart_width +
+            eye_width +
             gap
         )
 
-        # Based on the reference image:
-        # face sits high enough to feel monumental,
-        # leaving the mouth and clock breathing room.
         center_y = (
             self.height * 0.40
         )
 
         top_y = (
             center_y -
-            heart_height / 2
+            eye_height / 2
         )
 
         return {
             "pixel": pixel,
-            "heart_width": heart_width,
-            "heart_height": heart_height,
+            "eye_width": eye_width,
+            "eye_height": eye_height,
             "left_x": left_x,
             "right_x": right_x,
             "top_y": top_y,
         }
 
     # ========================================================
-    # HEART
+    # EYE (housing + pupil, drawn together so the pupil rides
+    # along with the housing's own blink/squash transform)
     # ========================================================
 
-    def _draw_heart(
+    def _draw_eye(
         self,
         x0,
         y0,
@@ -452,25 +461,26 @@ class HeartEyesGlyph(Glyph):
         scale,
         x_shift,
         y_shift,
+        pupil_col0,
+        pupil_row0,
         glitch=False,
     ):
 
         items = []
 
-        rows = len(HEART_GRID)
+        rows = EYE_ROWS
 
         center_row = (
             rows - 1
         ) / 2
 
-        # Never fully collapse, but allow a near-shut eyelid line.
         scale = max(
             0.02,
             scale,
         )
 
         for row, data in enumerate(
-            HEART_GRID
+            EYE_GRID
         ):
 
             transformed_row = (
@@ -486,6 +496,12 @@ class HeartEyesGlyph(Glyph):
                 transformed_row *
                 pixel +
                 y_shift
+            )
+
+            in_pupil_row = (
+                pupil_row0
+                <= row
+                < pupil_row0 + PUPIL_H
             )
 
             for col, cell in enumerate(
@@ -518,13 +534,26 @@ class HeartEyesGlyph(Glyph):
                     ),
                 )
 
+                in_pupil = (
+                    in_pupil_row
+                    and pupil_col0
+                    <= col
+                    < pupil_col0 + PUPIL_W
+                )
+
+                color = (
+                    self.args.pupil_color
+                    if in_pupil
+                    else self.args.eye_color
+                )
+
                 items.append(
                     self.canvas.create_rectangle(
                         x + gap,
                         y + gap,
                         x + pixel - gap,
                         y + pixel - gap,
-                        fill=self.args.eye_color,
+                        fill=color,
                         outline="",
                     )
                 )
@@ -568,10 +597,9 @@ class HeartEyesGlyph(Glyph):
             width / 2
         )
 
-        # Tighter attachment to the eyes.
         y0 = (
             layout["top_y"] +
-            layout["heart_height"] +
+            layout["eye_height"] +
             pixel * 0.28 +
             self.state["mouth_y"] * pixel
         )
@@ -652,40 +680,76 @@ class HeartEyesGlyph(Glyph):
 
         glitch = self.event is not None
 
-        global_x = (
-            self.state["gaze_x"] *
-            pixel
+        # Pupil position in housing-grid cells, shared by both
+        # eyes so they track the same point - this is the part
+        # that actually reads as "eyeballs" rather than a
+        # shifting shape.
+        gaze_x = max(
+            -1.0,
+            min(
+                1.0,
+                self.state["gaze_x"],
+            ),
         )
 
-        global_y = (
-            self.state["gaze_y"] *
-            pixel
+        gaze_y = max(
+            -1.0,
+            min(
+                1.0,
+                self.state["gaze_y"],
+            ),
+        )
+
+        pupil_col0 = (
+            PUPIL_BASE_COL
+            + round(gaze_x * MAX_COL_OFFSET)
+        )
+
+        pupil_col0 = max(
+            0,
+            min(
+                EYE_COLS - PUPIL_W,
+                pupil_col0,
+            ),
+        )
+
+        pupil_row0 = (
+            PUPIL_BASE_ROW
+            + round(gaze_y * MAX_ROW_OFFSET)
+        )
+
+        pupil_row0 = max(
+            0,
+            min(
+                EYE_ROWS - PUPIL_H,
+                pupil_row0,
+            ),
         )
 
         self.left_pixels = (
-            self._draw_heart(
+            self._draw_eye(
                 layout["left_x"],
                 layout["top_y"],
                 pixel,
                 self.state["left_scale"],
-                global_x +
                 self.state["left_x"] * pixel,
-                global_y +
                 self.state["left_y"] * pixel,
+                pupil_col0,
+                pupil_row0,
                 glitch=glitch,
             )
         )
 
         self.right_pixels = (
-            self._draw_heart(
+            self._draw_eye(
                 layout["right_x"],
                 layout["top_y"],
                 pixel,
                 self.state["right_scale"],
-                global_x +
                 self.state["right_x"] * pixel,
-                global_y +
                 self.state["right_y"] * pixel,
+                pupil_col0,
+                pupil_row0,
                 glitch=glitch,
             )
         )
@@ -698,10 +762,6 @@ class HeartEyesGlyph(Glyph):
 
     # ========================================================
     # STEPPED TRANSITIONS
-    #
-    # No easing curves. A beat snaps through a fixed number of
-    # discrete levels, like a digital counter ticking over
-    # rather than a value drifting smoothly.
     # ========================================================
 
     @staticmethod
@@ -756,10 +816,6 @@ class HeartEyesGlyph(Glyph):
 
     # ========================================================
     # POSE SCALING (anticipation / overshoot / rebound)
-    #
-    # Pushes a target pose further away from neutral (factor
-    # > 1) or briefly against it (factor < 0), then clamps to
-    # BOUNDS so extremes stay physically sane.
     # ========================================================
 
     def _scaled_pose(self, target, factor):
@@ -830,11 +886,6 @@ class HeartEyesGlyph(Glyph):
 
     # ========================================================
     # EXPRESSION TARGETS
-    #
-    # These are the "held" poses at full exaggeration - the
-    # timeline above pushes past and settles into these, so
-    # write them bold. A shy nudge here reads as nothing once
-    # anticipation and overshoot are layered on top.
     # ========================================================
 
     def _expression(
@@ -844,10 +895,6 @@ class HeartEyesGlyph(Glyph):
 
         state = self._neutral()
 
-        # ----------------------------------------------------
-        # NORMAL BLINK
-        # ----------------------------------------------------
-
         if name == "blink":
 
             state.update(
@@ -855,10 +902,6 @@ class HeartEyesGlyph(Glyph):
                 right_scale=0.02,
                 mouth_scale=0.92,
             )
-
-        # ----------------------------------------------------
-        # WINK
-        # ----------------------------------------------------
 
         elif name == "wink_left":
 
@@ -876,211 +919,153 @@ class HeartEyesGlyph(Glyph):
                 gaze_x=-0.14,
             )
 
-        # ----------------------------------------------------
-        # SIDE EYE
-        # ----------------------------------------------------
-
         elif name == "side_left":
 
             state.update(
-                left_scale=0.62,
-                right_scale=0.72,
+                left_scale=0.70,
+                right_scale=0.78,
                 gaze_x=-1.0,
-                left_x=-0.20,
-                right_x=-0.14,
-                left_y=0.06,
-                right_y=-0.04,
+                left_x=-0.10,
+                right_x=-0.06,
+                left_y=0.04,
+                right_y=-0.03,
                 mouth_scale=0.80,
             )
 
         elif name == "side_right":
 
             state.update(
-                left_scale=0.72,
-                right_scale=0.62,
+                left_scale=0.78,
+                right_scale=0.70,
                 gaze_x=1.0,
-                left_x=0.14,
-                right_x=0.20,
-                left_y=-0.04,
-                right_y=0.06,
+                left_x=0.06,
+                right_x=0.10,
+                left_y=-0.03,
+                right_y=0.04,
                 mouth_scale=0.80,
             )
-
-        # ----------------------------------------------------
-        # LOOK LEFT / RIGHT
-        # Full sideways glance, distinct from the narrower
-        # side-eye above: both hearts shift as a unit.
-        # ----------------------------------------------------
 
         elif name == "look_left":
 
             state.update(
-                left_scale=0.78,
-                right_scale=0.85,
-                gaze_x=-0.95,
-                left_x=-0.12,
-                right_x=-0.12,
+                left_scale=0.85,
+                right_scale=0.90,
+                gaze_x=-1.0,
             )
 
         elif name == "look_right":
 
             state.update(
-                left_scale=0.85,
-                right_scale=0.78,
-                gaze_x=0.95,
-                left_x=0.12,
-                right_x=0.12,
+                left_scale=0.90,
+                right_scale=0.85,
+                gaze_x=1.0,
             )
-
-        # ----------------------------------------------------
-        # SKEPTICAL
-        # ----------------------------------------------------
 
         elif name == "skeptical":
 
             state.update(
                 left_scale=0.36,
                 right_scale=1.08,
-                gaze_x=0.45,
+                gaze_x=0.6,
                 left_y=-0.22,
                 right_y=0.16,
                 mouth_scale=0.75,
             )
-
-        # ----------------------------------------------------
-        # CONFUSED
-        # ----------------------------------------------------
 
         elif name == "confused":
 
             state.update(
                 left_scale=0.95,
                 right_scale=0.32,
-                gaze_x=-0.22,
+                gaze_x=-0.3,
                 left_y=-0.24,
                 right_y=0.22,
                 mouth_y=0.15,
                 mouth_scale=0.70,
             )
 
-        # ----------------------------------------------------
-        # HAPPY
-        # ----------------------------------------------------
-
         elif name == "happy":
 
             state.update(
                 left_scale=0.52,
                 right_scale=0.53,
-                gaze_y=-0.10,
+                gaze_y=-0.15,
                 mouth_scale=1.45,
             )
-
-        # ----------------------------------------------------
-        # LAUGH
-        # ----------------------------------------------------
 
         elif name == "laugh":
 
             state.update(
                 left_scale=0.26,
                 right_scale=0.28,
-                gaze_y=-0.16,
+                gaze_y=-0.25,
                 mouth_scale=1.65,
             )
-
-        # ----------------------------------------------------
-        # SLEEPY
-        # ----------------------------------------------------
 
         elif name == "sleepy":
 
             state.update(
                 left_scale=0.28,
                 right_scale=0.22,
-                gaze_y=0.38,
+                gaze_y=0.6,
                 mouth_scale=0.58,
             )
-
-        # ----------------------------------------------------
-        # SURPRISED
-        # ----------------------------------------------------
 
         elif name == "surprised":
 
             state.update(
                 left_scale=1.40,
                 right_scale=1.40,
-                gaze_y=-0.18,
+                gaze_y=-0.3,
                 mouth_scale=1.35,
             )
-
-        # ----------------------------------------------------
-        # SHY
-        # ----------------------------------------------------
 
         elif name == "shy":
 
             state.update(
-                gaze_x=-0.38,
-                gaze_y=0.34,
+                gaze_x=-0.6,
+                gaze_y=0.6,
                 left_scale=0.58,
                 right_scale=0.72,
                 mouth_scale=0.52,
                 mouth_y=-0.09,
             )
 
-        # ----------------------------------------------------
-        # POUT
-        # ----------------------------------------------------
-
         elif name == "pout":
 
             state.update(
-                gaze_y=0.18,
+                gaze_y=0.3,
                 left_scale=0.76,
                 right_scale=0.78,
                 mouth_scale=0.78,
                 mouth_y=-0.05,
             )
 
-        # ----------------------------------------------------
-        # DISAPPOINTED
-        # ----------------------------------------------------
-
         elif name == "disappointed":
 
             state.update(
                 left_scale=0.42,
                 right_scale=0.38,
-                gaze_y=0.36,
+                gaze_y=0.6,
                 mouth_scale=0.46,
                 mouth_y=0.11,
             )
-
-        # ----------------------------------------------------
-        # EXCITED
-        # ----------------------------------------------------
 
         elif name == "excited":
 
             state.update(
                 left_scale=1.30,
                 right_scale=1.26,
-                gaze_y=-0.22,
+                gaze_y=-0.35,
                 mouth_scale=1.55,
             )
-
-        # ----------------------------------------------------
-        # LOOK UP / DOWN
-        # ----------------------------------------------------
 
         elif name == "look_up":
 
             state.update(
                 left_scale=0.84,
                 right_scale=0.80,
-                gaze_y=-0.68,
+                gaze_y=-1.0,
             )
 
         elif name == "look_down":
@@ -1088,19 +1073,15 @@ class HeartEyesGlyph(Glyph):
             state.update(
                 left_scale=0.80,
                 right_scale=0.84,
-                gaze_y=0.62,
+                gaze_y=1.0,
             )
-
-        # ----------------------------------------------------
-        # DEADPAN
-        # ----------------------------------------------------
 
         elif name == "deadpan":
 
             state.update(
                 left_scale=0.54,
                 right_scale=0.52,
-                gaze_x=0.06,
+                gaze_x=0.1,
                 mouth_scale=0.55,
             )
 
@@ -1222,10 +1203,6 @@ class HeartEyesGlyph(Glyph):
 
         self.event_frame = 0
 
-        # Frame count is driven by expression-speed, quantized
-        # to the 20ms tick, with a little jitter so beats
-        # don't all feel metronomic. Needs enough headroom for
-        # six keyframe segments to each read as a distinct snap.
         base_frames = max(
             12,
             self.args.expression_speed // 20,
@@ -1236,7 +1213,6 @@ class HeartEyesGlyph(Glyph):
             random.randint(-2, 2)
         )
 
-        # Longer expressions get slightly more time to hold.
         if self.event in (
             "sleepy",
             "shy",
@@ -1257,8 +1233,6 @@ class HeartEyesGlyph(Glyph):
             )
         )
 
-        # Mouth shape is selected early,
-        # but hidden behind a scale transition.
         if self.args.mouth:
 
             self.mouth_shape_target = (
@@ -1276,15 +1250,6 @@ class HeartEyesGlyph(Glyph):
 
     # ========================================================
     # ANIMATE EXPRESSION
-    #
-    #   neutral -> anticipation -> overshoot -> settle -> hold
-    #            -> rebound -> neutral
-    #
-    # progress walks 0 -> 1 across the whole beat. Each pair of
-    # adjacent keyframes defines a segment; within a segment the
-    # value snaps through args.transition_steps discrete levels
-    # rather than easing, so motion still reads as digital even
-    # though the poses themselves are now big and punchy.
     # ========================================================
 
     def _animate_expression(self):
@@ -1328,8 +1293,6 @@ class HeartEyesGlyph(Glyph):
             local_t,
         )
 
-        # Mouth swaps once the pose has punched past the
-        # anticipation dip and is committing to the overshoot.
         if (
             self.args.mouth
             and progress >= KEYFRAME_TIMES[2]
@@ -1354,7 +1317,6 @@ class HeartEyesGlyph(Glyph):
 
         else:
 
-            # Exact neutral end state.
             self.state = self._neutral()
 
             self.mouth_shape_current = "smile"
@@ -1389,11 +1351,6 @@ class HeartEyesGlyph(Glyph):
 
     # ========================================================
     # EYE TRACKING
-    #
-    # The gaze steps toward a target point on a fixed grid at
-    # a constant rate - no easing, no drift. It arrives, holds,
-    # then a new target is picked, like a scanner sweeping a
-    # matrix rather than an eye wandering.
     # ========================================================
 
     def _schedule_gaze(self):
