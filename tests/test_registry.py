@@ -47,5 +47,5 @@ def test_heart_eyes_add_arguments_includes_shared_bg_flag():
     args = parser.parse_args([])
 
     assert args.bg == "black"
-    assert args.eye_color == "#ff2d55"
+    assert args.eye_color == "#ffffff"
     assert args.mouth is False
