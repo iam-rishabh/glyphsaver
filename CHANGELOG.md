@@ -20,6 +20,7 @@ once a first tagged release is made.
   instead of one hardcoded script per screensaver.
 - `idle_watcher.py` now launches any glyph via `--glyph NAME -- FLAGS`
   instead of a hardcoded `--mode`.
+- 'glyphs/heart_eyes.py -- updated the heart eyes to new color and animations.
 
 ### Added
 - `glyphs/base.py` — the `Glyph` plugin contract.
@@ -28,6 +29,7 @@ once a first tagged release is made.
 - `docs/CREATING_GLYPHS.md` — step-by-step guide for writing new glyphs.
 - Project scaffolding for contributions: LICENSE, CONTRIBUTING,
   CODE_OF_CONDUCT, SECURITY, issue/PR templates, CI workflow, unit tests.
+- `glyphs/robots_eyes.py` — robots eye - pixel style.
 
 ### Removed
 - `slideshow_screensaver.py` and all image-folder / Pillow functionality.
